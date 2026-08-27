@@ -4,7 +4,7 @@
    persis di saat dibutuhkan. */
 
 // Naikkan nomornya setiap kali index/app/style berubah.
-const CACHE = 'nilai-rumah-v6';
+const CACHE = 'nilai-rumah-v7';
 
 // `./index.html` SENGAJA tidak ada di sini walau filenya ada.
 // Menyimpan halaman yang sama di dua alamat (`./` dan `./index.html`)

@@ -214,7 +214,10 @@ function alertSekali(pesan) {
   const el = document.createElement('p');
   el.className = 'backup-msg';
   el.dataset.err = '1';
-  el.style.cssText = 'position:fixed;inset:auto 12px 12px;z-index:200;background:#F7F2E8;border:2px solid #C13A16;border-radius:4px;padding:12px;margin:0';
+  // Ditulis langsung, bukan lewat kelas: peringatan ini muncul justru
+  // ketika penyimpanan bermasalah, dan harus tetap terbaca walau ada
+  // yang tidak beres dengan pemuatan gaya halaman.
+  el.style.cssText = 'position:fixed;inset:auto 12px 12px;z-index:200;background:#FFF8F6;border:2px solid #D23C68;border-radius:4px;padding:12px;margin:0';
   el.textContent = pesan;
   document.body.appendChild(el);
 }

@@ -2,19 +2,28 @@
    Nilai Rumah — buku catatan surveyor
    Kontras tinggi, latar kertas: dibaca di bawah
    matahari sambil berdiri, bukan di dalam ruangan.
+
+   Palet "Peony": kertas merah muda terang dengan
+   tinta hampir hitam. Latar terang dipilih bukan
+   demi selera — itu yang membuat layarnya masih
+   terbaca saat silau. Kontras teks utama 16,2 dan
+   tidak ada pasangan warna di bawah ambang baca.
    ═══════════════════════════════════════════════ */
 
 :root {
-  --paper:      #EFE7D9;
-  --paper-deep: #E4D9C6;
-  --card:       #F7F2E8;
-  --ink:        #17140F;
-  --ink-soft:   #5C5346;
-  --ink-faint:  #8B8071;
-  --accent:     #C13A16;
-  --accent-dim: #A63012;
-  --olive:      #5F6B3C;
-  --line:       #C9BCA5;
+  --paper:      #FCEEEA;
+  --paper-deep: #F3DBD4;
+  --card:       #FFF8F6;
+  --ink:        #1B1215;
+  --ink-soft:   #6A4F52;
+  --ink-faint:  #8E7176;
+  --accent:     #D23C68;
+  --accent-dim: #B22F55;
+  /* Teal, bukan hijau: di atas merah muda, hijau sage
+     terbaca keruh — teal terbaca sebagai pilihan yang
+     disengaja dan tetap jelas beda dari angka skor. */
+  --sekunder:   #3F6D69;
+  --line:       #EBCCC5;
 
   --serif: "Fraunces", "Iowan Old Style", Georgia, serif;
   --sans:  "Archivo", "Helvetica Neue", Helvetica, sans-serif;
@@ -284,7 +293,7 @@ input:focus, textarea:focus {
   text-transform: uppercase;
   text-decoration: none;
   color: var(--paper);
-  background: var(--olive);
+  background: var(--sekunder);
   border: 2px solid var(--ink);
   border-radius: 4px;
   padding: 0 14px;
@@ -338,7 +347,7 @@ input:focus, textarea:focus {
 .price-note {
   font-family: var(--mono);
   font-size: 12px;
-  color: var(--olive);
+  color: var(--sekunder);
   margin: -8px 0 16px;
 }
 
@@ -367,7 +376,7 @@ input:focus, textarea:focus {
    didefinisikan setelahnya. Warnanya WAJIB beda dari skor — dua
    angka besar sewarna bersebelahan terbaca sebagai satu angka. */
 .scoreboard-num.scoreboard-num-alt {
-  color: var(--olive);
+  color: var(--sekunder);
   font-size: 40px;
 }
 .scoreboard-num {
@@ -517,9 +526,9 @@ input:focus, textarea:focus {
   cursor: pointer;
 }
 .yatidak button[data-nilai="true"][aria-pressed="true"] {
-  background: var(--olive);
+  background: var(--sekunder);
   border-color: var(--ink);
-  color: #F7F2E8;
+  color: var(--card);
 }
 .yatidak button[data-nilai="false"][aria-pressed="true"] {
   background: var(--ink);
@@ -607,7 +616,7 @@ input:focus, textarea:focus {
   min-height: 34px;
   -webkit-appearance: none;
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%235C5346' stroke-width='1.6'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%236A4F52' stroke-width='1.6'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 9px center;
   padding-right: 26px;
@@ -621,7 +630,7 @@ input:focus, textarea:focus {
   z-index: 5;
   transition: none;
   background: var(--card);
-  box-shadow: 0 6px 18px rgba(23, 20, 15, .18);
+  box-shadow: 0 6px 18px rgba(27, 18, 21, .18);
   border-radius: 4px;
   border-top-color: transparent;
 }
@@ -693,7 +702,11 @@ body.sedang-seret {
   display: flex;
   gap: 8px;
   padding: 12px var(--pad) calc(12px + env(safe-area-inset-bottom));
-  background: linear-gradient(to top, var(--paper) 62%, rgba(239,231,217,0));
+  /* Ujung transparannya HARUS warna --paper yang sama. Kalau
+     tertinggal warna palet lama, ia muncul sebagai semburat kotor
+     di tepi gradasi — dan gampang tidak terlihat sampai ada yang
+     menatapnya di bawah matahari. */
+  background: linear-gradient(to top, var(--paper) 62%, rgba(252,238,234,0));
   max-width: 620px;
   margin: 0 auto;
 }
@@ -714,7 +727,10 @@ body.sedang-seret {
 }
 .btn:active { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--ink); }
 
-.btn-primary { background: var(--accent); color: #FFF6EC; border-color: var(--ink); flex: 2; }
+/* Pakai nada yang lebih dalam, bukan --accent: teks 13px di atas
+   pink terang jatuh di bawah ambang baca. Angka skor tetap memakai
+   --accent yang cerah karena ukurannya besar. */
+.btn-primary { background: var(--accent-dim); color: #FFFFFF; border-color: var(--ink); flex: 2; }
 .btn-ghost   { background: var(--card); color: var(--ink); }
 .btn-sm      { min-height: 46px; flex: 0 0 auto; }
 
@@ -741,7 +757,7 @@ body.sedang-seret {
 .backup-msg {
   font-family: var(--mono);
   font-size: 12px;
-  color: var(--olive);
+  color: var(--sekunder);
   margin: 10px 0 0;
 }
 .backup-msg[data-err="1"] { color: var(--accent); }

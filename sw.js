@@ -6,7 +6,7 @@
 // Naikkan nomornya setiap kali index/app/style berubah, supaya
 // kunjungan berikutnya dapat versi baru — bukan menyajikan yang
 // lama dulu lalu baru menyegarkan di belakang.
-const CACHE = 'nilai-rumah-v2';
+const CACHE = 'nilai-rumah-v3';
 
 const SHELL = [
   './',

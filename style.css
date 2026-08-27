@@ -461,24 +461,64 @@ input:focus, textarea:focus {
   list-style: none;
   margin: 0;
   padding: 0;
-  counter-reset: c;
 }
 .crit-editor li {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   border-top: 1px solid var(--line);
-  padding: 8px var(--pad);
+  padding: 8px 12px 8px 4px;
+  background: var(--paper);
+  transition: transform .16s cubic-bezier(.2, .7, .3, 1);
 }
 .crit-editor li:last-child { border-bottom: 1px solid var(--line); }
-.crit-editor li::before {
-  counter-increment: c;
-  content: counter(c, decimal-leading-zero);
+
+/* Baris yang sedang ditarik harus menempel di jari tanpa jeda —
+   transisi di sini justru membuatnya terasa molor. */
+.crit-editor li.seret {
+  z-index: 5;
+  transition: none;
+  background: var(--card);
+  box-shadow: 0 6px 18px rgba(23, 20, 15, .18);
+  border-radius: 4px;
+  border-top-color: transparent;
+}
+
+.grip {
+  flex: none;
+  width: 36px;
+  min-height: 46px;
+  /* Pegangan harus terlihat SEBAGAI pegangan sebelum disentuh —
+     kalau samar, orang tidak akan tahu barisnya bisa ditarik. */
+  font-size: 21px;
+  line-height: 1;
+  background: none;
+  border: none;
+  color: var(--ink-soft);
+  cursor: grab;
+  padding: 0;
+  /* Kunci utamanya: gestur tarik di pegangan tidak boleh diambil
+     alih browser jadi gulir halaman. Cuma di sini, supaya sisa
+     halamannya tetap bisa digulir seperti biasa. */
+  touch-action: none;
+}
+.grip:active { cursor: grabbing; color: var(--ink); }
+.grip:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; border-radius: 4px; }
+
+.crit-editor .no {
+  flex: none;
   font-family: var(--mono);
   font-size: 12px;
   color: var(--ink-faint);
-  flex: none;
 }
+
+body.sedang-seret {
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grabbing;
+}
+
 .crit-editor input {
   flex: 1;
   min-width: 0;

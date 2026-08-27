@@ -343,12 +343,29 @@ input:focus, textarea:focus {
 
 .scoreboard {
   display: flex;
-  align-items: center;
-  gap: 16px;
+  align-items: stretch;
+  gap: 14px;
   border-top: 2px solid var(--ink);
   border-bottom: 2px solid var(--ink);
   padding: 14px 0;
   margin: 4px 0 8px;
+}
+.scoreboard-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.scoreboard-cell + .scoreboard-cell {
+  border-left: 1px solid var(--line);
+  padding-left: 14px;
+}
+/* Ditulis dua kelas supaya menang atas `.scoreboard-num` yang
+   didefinisikan setelahnya. Warnanya WAJIB beda dari skor — dua
+   angka besar sewarna bersebelahan terbaca sebagai satu angka. */
+.scoreboard-num.scoreboard-num-alt {
+  color: var(--olive);
+  font-size: 40px;
 }
 .scoreboard-num {
   font-family: var(--serif);
@@ -414,15 +431,19 @@ input:focus, textarea:focus {
   white-space: nowrap;
 }
 
+/* Sepuluh tombol sama lebar. Di layar 390px tiap tombol ~31px —
+   sempit, tapi tingginya tetap 46px dan tidak ada lagi sela kecil
+   yang harus dibidik dengan teliti seperti pada skala setengahan. */
 .dots {
   display: flex;
   gap: 3px;
 }
 .dots button {
+  flex: 1 1 0;
   min-height: 46px;
   min-width: 0;
   font-family: var(--mono);
-  font-size: 15px;
+  font-size: 14px;
   background: var(--card);
   color: var(--ink-faint);
   border: 2px solid var(--line);
@@ -432,28 +453,122 @@ input:focus, textarea:focus {
   transition: background .1s ease, color .1s ease, border-color .1s ease;
 }
 
-/* 2:1 — angka bulat itu jawaban normal dan harus paling gampang
-   dituju; setengahnya cuma pemecah seri. */
-.dots .whole { flex: 2 1 0; }
-
-/* "½" di ukuran kecil terbaca seperti noda, bukan angka — apalagi
-   di bawah matahari. Naikkan ukuran & kontrasnya, jangan turunkan
-   cuma karena tombolnya sempit. */
-.dots .half {
-  flex: 1 1 0;
-  font-family: var(--serif);
-  font-size: 19px;
-  font-weight: 600;
-  color: var(--ink-soft);
-  line-height: 1;
-}
-
 .dots button[aria-pressed="true"] {
   background: var(--ink);
   border-color: var(--ink);
   color: var(--paper);
 }
 .dots button:active { transform: scale(.94); }
+
+/* ── Kepala blok & isian per tipe ─────────────── */
+
+/* Menempel tepat di bawah kepala halaman: dengan 35 kriteria layarnya
+   panjang, dan tanpa ini tidak ada cara tahu sedang di blok mana
+   selain menggulir balik ke atas. */
+.blok {
+  position: sticky;
+  /* Kepala halaman tingginya 66px (44 tombol + 2×10 padding + 2 garis).
+     Dipasang 65 supaya SELALU sedikit tumpang tindih — celah 1px akan
+     memperlihatkan isi yang lewat di baliknya, dan tumpang tindihnya
+     sendiri tidak terlihat karena kepala halaman berada di atasnya. */
+  top: 65px;
+  z-index: 15;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--paper);
+  background: var(--ink);
+  margin: 22px 0 0;
+  padding: 8px var(--pad);
+}
+.blok-n {
+  letter-spacing: .04em;
+  color: var(--paper-deep);
+  opacity: .75;
+}
+
+.crit input[type="text"] { margin-top: 2px; }
+.crit .money { margin-top: 2px; }
+
+.yatidak {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+.yatidak button {
+  flex: 1;
+  min-height: var(--tap);
+  font-family: var(--mono);
+  font-size: 14px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  background: var(--card);
+  color: var(--ink-soft);
+  border: 2px solid var(--line);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.yatidak button[data-nilai="true"][aria-pressed="true"] {
+  background: var(--olive);
+  border-color: var(--ink);
+  color: #F7F2E8;
+}
+.yatidak button[data-nilai="false"][aria-pressed="true"] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+
+/* ── Chip ─────────────────────────────────────── */
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+.chips-saran { margin-top: 10px; }
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  font-family: var(--sans);
+  font-size: 14.5px;
+  background: var(--ink);
+  color: var(--paper);
+  border: 2px solid var(--ink);
+  border-radius: 99px;
+  padding: 0 12px;
+  cursor: pointer;
+}
+.chip-x { font-family: var(--mono); font-size: 15px; opacity: .65; }
+.chip:active { transform: scale(.96); }
+
+/* Saran sengaja dibuat "kosong": bentuknya sama, isinya tidak —
+   supaya sekilas terlihat mana yang SUDAH dipilih dan mana yang
+   baru tawaran. */
+.chip-saran {
+  background: none;
+  color: var(--ink-soft);
+  border-color: var(--line);
+  border-width: 1px;
+  font-size: 14px;
+}
+
+.chip-form {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+.chip-form input { flex: 1; min-width: 0; }
+.chip-form .btn { flex: 0 0 auto; font-size: 18px; padding: 0 18px; }
 
 /* ── Editor kriteria ──────────────────────────── */
 
@@ -464,14 +579,37 @@ input:focus, textarea:focus {
 }
 .crit-editor li {
   position: relative;
-  display: flex;
-  align-items: center;
-  gap: 6px;
   border-top: 1px solid var(--line);
-  padding: 8px 12px 8px 4px;
+  padding: 8px 12px 10px 4px;
   background: var(--paper);
   transition: transform .16s cubic-bezier(.2, .7, .3, 1);
 }
+.crit-atas {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+/* Sejajar dengan kotak nama di atasnya, bukan dengan tepi layar —
+   pegangan + nomor memakan 36+22px. */
+.crit-bawah { padding-left: 64px; padding-top: 6px; }
+
+.tipe {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink-soft);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 6px 8px;
+  min-height: 34px;
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%235C5346' stroke-width='1.6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 9px center;
+  padding-right: 26px;
+}
+.tipe:focus { outline: 3px solid var(--accent); outline-offset: 1px; }
 .crit-editor li:last-child { border-bottom: 1px solid var(--line); }
 
 /* Baris yang sedang ditarik harus menempel di jari tanpa jeda —

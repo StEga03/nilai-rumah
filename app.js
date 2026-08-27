@@ -7,12 +7,26 @@
 'use strict';
 
 const KEY = 'nilai-rumah/v1';
-const MAX = 5; // skor tertinggi per kriteria
+const VERSI = 2;
+const MAX = 10; // skor tertinggi per kriteria
 
-// Angka bulat + setengahnya. Setengah dipakai untuk memecah seri,
-// bukan sebagai pilihan sehari-hari — makanya tombolnya lebih sempit.
-const SKALA = [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5];
+const SKALA = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
+// Tipe kriteria. Hanya `skor` yang masuk rata-rata: kalau "ada gym = Ya"
+// ikut dihitung, satu jawaban Ya berbobot sama dengan satu penilaian
+// penuh, dan blok fasilitas yang isinya seragam justru MELUMATKAN
+// perbedaan antar-rumah — kebalikan dari guna alat ini.
+const TIPE = {
+  skor: 'Skor 1–10',
+  yatidak: 'Ya / Tidak',
+  rupiah: 'Rupiah',
+  teks: 'Teks',
+  daftar: 'Daftar',
+};
+
+const TIPE_BAWAAN = 'skor';
+
+// Bawaan gelombang 1 — semuanya penilaian.
 const KRITERIA_AWAL = [
   'Harga & ruang nego',
   'Luas & jumlah kamar',
@@ -27,6 +41,38 @@ const KRITERIA_AWAL = [
   'Akses jalan / lebar gang',
   'Tetangga & lingkungan',
   'Jarak ke tempat kerja',
+].map((name) => ({ name, type: 'skor' }));
+
+// Bawaan gelombang 2 — daftar pencatatan, ditambahkan juga ke data
+// yang sudah ada supaya tidak perlu diketik ulang satu per satu.
+const KRITERIA_CATATAN = [
+  { name: 'Furniture yang dikasih', type: 'daftar', opsi: [
+    'AC', 'Kasur', 'Lemari', 'Sofa', 'Meja makan', 'Kursi makan', 'Kulkas',
+    'Mesin cuci', 'Kompor', 'Water heater', 'Gorden', 'TV', 'Dispenser', 'Rak sepatu',
+  ] },
+  { name: 'Bisa bayar per berapa', type: 'daftar', opsi: [
+    'Per bulan', 'Per 3 bulan', 'Per 6 bulan', 'Per tahun', 'Per 2 tahun',
+  ] },
+  { name: 'Biaya IPKL (per bulan)', type: 'rupiah' },
+  { name: 'Biaya deposit', type: 'rupiah' },
+  { name: 'Listrik (VA)', type: 'teks' },
+  { name: 'Luas tanah (m²)', type: 'teks' },
+  { name: 'Luas bangunan (m²)', type: 'teks' },
+  { name: 'Jumlah lantai', type: 'teks' },
+  { name: 'Jumlah kamar', type: 'teks' },
+  { name: 'Jumlah kamar mandi', type: 'teks' },
+  { name: 'Nama cluster', type: 'teks' },
+  { name: 'Rumah hadap ke mana', type: 'teks' },
+  { name: 'Warna tembok', type: 'teks' },
+  { name: 'Ada gym?', type: 'yatidak' },
+  { name: 'Ada kolam renang?', type: 'yatidak' },
+  { name: 'Dekat rumah sakit?', type: 'yatidak' },
+  { name: 'Dekat pasar?', type: 'yatidak' },
+  { name: 'Dekat area komersil?', type: 'yatidak' },
+  { name: 'Dekat tol?', type: 'yatidak' },
+  { name: 'Ada kanopi?', type: 'yatidak' },
+  { name: 'Ada backyard?', type: 'yatidak' },
+  { name: 'Teras muat 2 mobil?', type: 'yatidak' },
 ];
 
 /* ── Keadaan ──────────────────────────────────── */
@@ -36,11 +82,17 @@ let houseId = null; // rumah yang sedang dibuka
 
 function bikinAwal() {
   return {
-    version: 1,
+    version: VERSI,
     raters: ['Saya', 'Istri'],
-    criteria: KRITERIA_AWAL.map((name) => ({ id: uid(), name })),
+    criteria: [...KRITERIA_AWAL, ...KRITERIA_CATATAN].map(bikinKriteria),
     houses: [],
   };
+}
+
+function bikinKriteria(k) {
+  const c = { id: uid(), name: String(k.name), type: TIPE[k.type] ? k.type : TIPE_BAWAAN };
+  if (c.type === 'daftar') c.opsi = Array.isArray(k.opsi) ? k.opsi.map(String) : [];
+  return c;
 }
 
 function muat() {
@@ -65,10 +117,19 @@ function rapikan(d) {
     ? d.raters.map((r, i) => String(r || dasar.raters[i]).slice(0, 12))
     : dasar.raters;
 
+  // Data sebelum VERSI 2 memakai skala 1–5 (dengan setengahan) dan
+  // kriteria tanpa tipe. Dikenali dari nomor versinya, bukan dari
+  // menebak isi — tebakan akan salah pada data yang kebetulan
+  // seluruh skornya bernilai rendah.
+  const lama = (Number(d.version) || 1) < 2;
+
   const criteria = Array.isArray(d.criteria) && d.criteria.length
-    ? d.criteria
-        .filter((c) => c && c.name)
-        .map((c) => ({ id: String(c.id || uid()), name: String(c.name) }))
+    ? d.criteria.filter((c) => c && c.name).map((c) => {
+        const baru = bikinKriteria({ name: c.name, type: c.type, opsi: c.opsi });
+        // id asli WAJIB dipertahankan: skor dan data menempel padanya.
+        if (c.id) baru.id = String(c.id);
+        return baru;
+      })
     : dasar.criteria;
 
   const houses = Array.isArray(d.houses)
@@ -79,12 +140,60 @@ function rapikan(d) {
         price: Number(h.price) || 0,
         period: h.period === 'tahun' ? 'tahun' : 'bulan',
         notes: String(h.notes || ''),
-        scores: h.scores && typeof h.scores === 'object' ? h.scores : {},
+        scores: bersihkanSkor(h.scores, lama),
+        data: bersihkanData(h.data, criteria),
         createdAt: Number(h.createdAt) || Date.now(),
       }))
     : [];
 
-  return { version: 1, raters, criteria, houses };
+  const hasil = { version: VERSI, raters, criteria, houses };
+  if (lama) tambahKriteriaCatatan(hasil);
+  return hasil;
+}
+
+// Skala 1–5 (+setengahan) menjadi 1–10 dengan dikali dua: 4½ → 9,
+// 3 → 6. Pemetaannya pas, tidak ada yang hilang. Efek sampingnya
+// jujur: skor lama tidak akan pernah menjadi 1, paling rendah 2.
+function bersihkanSkor(scores, lama) {
+  const keluar = {};
+  if (!scores || typeof scores !== 'object') return keluar;
+  for (const [id, pasangan] of Object.entries(scores)) {
+    if (!Array.isArray(pasangan)) continue;
+    keluar[id] = [0, 1].map((i) => {
+      const n = pasangan[i];
+      if (typeof n !== 'number' || !isFinite(n)) return null;
+      const v = lama ? n * 2 : n;
+      return v >= 1 && v <= MAX ? Math.round(v) : null;
+    });
+  }
+  return keluar;
+}
+
+function bersihkanData(data, criteria) {
+  const keluar = {};
+  if (!data || typeof data !== 'object') return keluar;
+  const tipeDari = {};
+  for (const c of criteria) tipeDari[c.id] = c.type;
+  for (const [id, nilai] of Object.entries(data)) {
+    const t = tipeDari[id];
+    if (!t) continue; // kriteria sudah dihapus — buang datanya juga
+    if (t === 'yatidak') keluar[id] = nilai === true ? true : nilai === false ? false : null;
+    else if (t === 'rupiah') keluar[id] = Number(nilai) || 0;
+    else if (t === 'teks') keluar[id] = String(nilai == null ? '' : nilai);
+    else if (t === 'daftar') keluar[id] = Array.isArray(nilai) ? nilai.map(String) : [];
+  }
+  return keluar;
+}
+
+// Menambahkan daftar pencatatan ke data yang SUDAH ada, sekali saja.
+// Tanpa ini, orang yang sudah memakai versi lama harus mengetik 22
+// kriteria satu per satu — dan seluruh gunanya hilang.
+function tambahKriteriaCatatan(s) {
+  const sudahAda = new Set(s.criteria.map((c) => c.name.trim().toLowerCase()));
+  for (const k of KRITERIA_CATATAN) {
+    if (sudahAda.has(k.name.trim().toLowerCase())) continue;
+    s.criteria.push(bikinKriteria(k));
+  }
 }
 
 function simpan() {
@@ -119,9 +228,17 @@ function uid() {
 // Rata-rata seluruh skor yang SUDAH diisi. Kriteria yang belum
 // dinilai tidak dianggap nol — kalau dianggap nol, rumah yang baru
 // dinilai separuh akan selalu kalah dari rumah yang sudah lengkap.
+function kriteriaSkor() {
+  return state.criteria.filter((c) => c.type === 'skor');
+}
+
+function kriteriaCatatan() {
+  return state.criteria.filter((c) => c.type !== 'skor');
+}
+
 function skorRumah(h) {
   const nilai = [];
-  for (const c of state.criteria) {
+  for (const c of kriteriaSkor()) {
     const pasangan = h.scores[c.id];
     if (!Array.isArray(pasangan)) continue;
     for (const n of pasangan) {
@@ -133,10 +250,21 @@ function skorRumah(h) {
 }
 
 function jumlahKriteriaDinilai(h) {
-  return state.criteria.filter((c) => {
+  return kriteriaSkor().filter((c) => {
     const p = h.scores[c.id];
     return Array.isArray(p) && p.some((n) => typeof n === 'number');
   }).length;
+}
+
+// Ya/Tidak dihitung TERPISAH dan ditampilkan di sebelah skor, tidak
+// dicampur ke rata-rata. Yang belum dijawab tidak dianggap "Tidak" —
+// belum dicek dan tidak ada itu dua hal berbeda.
+function fasilitasRumah(h) {
+  const semua = state.criteria.filter((c) => c.type === 'yatidak');
+  if (!semua.length) return null;
+  const dijawab = semua.filter((c) => typeof h.data[c.id] === 'boolean');
+  if (!dijawab.length) return null;
+  return { ya: dijawab.filter((c) => h.data[c.id] === true).length, dari: semua.length };
 }
 
 function rupiah(n) {
@@ -247,7 +375,9 @@ function kartuRumah(h, rank) {
   meta.className = 'house-meta';
   const bagian = [];
   if (h.price > 0) bagian.push('Rp ' + ringkas(h.price) + '/' + (h.period === 'tahun' ? 'thn' : 'bln'));
-  bagian.push(jumlahKriteriaDinilai(h) + '/' + state.criteria.length + ' kriteria');
+  bagian.push(jumlahKriteriaDinilai(h) + '/' + kriteriaSkor().length + ' kriteria');
+  const f = fasilitasRumah(h);
+  if (f) bagian.push(f.ya + '/' + f.dari + ' fasilitas');
   if (linkAman(h.link)) bagian.push('↗');
   meta.textContent = bagian.join('  ·  ');
 
@@ -332,57 +462,273 @@ function renderScoreboard() {
   if (skor === null) num.dataset.none = '1';
   else delete num.dataset.none;
   document.getElementById('house-progress').textContent =
-    jumlahKriteriaDinilai(h) + ' dari ' + state.criteria.length + ' kriteria dinilai';
+    jumlahKriteriaDinilai(h) + ' dari ' + kriteriaSkor().length + ' dinilai';
+
+  const f = fasilitasRumah(h);
+  const sel = document.getElementById('cell-fasilitas');
+  sel.hidden = !f;
+  if (f) document.getElementById('house-fasilitas').textContent = f.ya + '/' + f.dari;
 }
 
 function renderCriteria() {
   const h = rumahAktif();
-  const wrap = document.getElementById('criteria-list');
-  wrap.textContent = '';
+  const nilai = document.getElementById('criteria-list');
+  const catat = document.getElementById('catatan-list');
+  nilai.textContent = '';
+  catat.textContent = '';
   if (!h) return;
 
-  for (const c of state.criteria) {
-    const box = document.createElement('div');
-    box.className = 'crit';
+  const daftarNilai = kriteriaSkor();
+  const daftarCatat = kriteriaCatatan();
 
-    const judul = document.createElement('h3');
-    judul.className = 'crit-name';
-    judul.textContent = c.name;
-    box.appendChild(judul);
+  // Judul blok disembunyikan kalau bloknya kosong — kepala tanpa isi
+  // terbaca seperti sesuatu yang gagal dimuat.
+  document.getElementById('blok-nilai').hidden = !daftarNilai.length;
+  document.getElementById('blok-catat').hidden = !daftarCatat.length;
 
-    for (let r = 0; r < 2; r++) {
-      const baris = document.createElement('div');
-      baris.className = 'rater';
+  for (const c of daftarNilai) nilai.appendChild(kotakKriteria(h, c));
+  for (const c of daftarCatat) catat.appendChild(kotakKriteria(h, c));
 
-      const tag = document.createElement('span');
-      tag.className = 'rater-tag';
-      tag.textContent = state.raters[r];
+  renderHitungBlok();
+}
 
-      const dots = document.createElement('div');
-      dots.className = 'dots';
-      dots.setAttribute('role', 'group');
-      dots.setAttribute('aria-label', c.name + ' — ' + state.raters[r]);
+// Dipanggil terpisah dari renderCriteria supaya isian teks bisa
+// memperbarui penghitungnya TANPA menggambar ulang seluruh layar —
+// menggambar ulang akan melempar kursor keluar dari kolom ketik.
+function renderHitungBlok() {
+  const h = rumahAktif();
+  if (!h) return;
+  const catat = kriteriaCatatan();
+  document.getElementById('n-nilai').textContent =
+    jumlahKriteriaDinilai(h) + '/' + kriteriaSkor().length;
+  document.getElementById('n-catat').textContent =
+    catat.filter((c) => sudahDicatat(h, c)).length + '/' + catat.length;
+}
 
-      for (const n of SKALA) {
-        const setengah = n % 1 !== 0;
-        const b = document.createElement('button');
-        b.type = 'button';
-        b.className = setengah ? 'half' : 'whole';
-        // Tombol setengah cuma memuat "½" — angka penuhnya tidak
-        // cukup ruang. Nilai sebenarnya tetap diumumkan lewat label.
-        b.textContent = setengah ? '½' : String(n);
-        b.setAttribute('aria-label', fmtSkor(n) + ' dari ' + MAX);
-        b.setAttribute('aria-pressed', String(nilaiSaatIni(h, c.id, r) === n));
-        b.addEventListener('click', () => setSkor(c.id, r, n));
-        dots.appendChild(b);
-      }
+function sudahDicatat(h, c) {
+  const v = h.data[c.id];
+  if (c.type === 'yatidak') return typeof v === 'boolean';
+  if (c.type === 'rupiah') return typeof v === 'number' && v > 0;
+  if (c.type === 'teks') return typeof v === 'string' && v.trim() !== '';
+  if (c.type === 'daftar') return Array.isArray(v) && v.length > 0;
+  return false;
+}
 
-      baris.append(tag, dots);
-      box.appendChild(baris);
+function kotakKriteria(h, c) {
+  const box = document.createElement('div');
+  box.className = 'crit';
+
+  const judul = document.createElement('h3');
+  judul.className = 'crit-name';
+  judul.textContent = c.name;
+  box.appendChild(judul);
+
+  if (c.type === 'skor') isiSkor(box, h, c);
+  else if (c.type === 'yatidak') isiYaTidak(box, h, c);
+  else if (c.type === 'rupiah') isiRupiah(box, h, c);
+  else if (c.type === 'teks') isiTeks(box, h, c);
+  else if (c.type === 'daftar') isiDaftar(box, h, c);
+
+  return box;
+}
+
+function isiSkor(box, h, c) {
+  for (let r = 0; r < 2; r++) {
+    const baris = document.createElement('div');
+    baris.className = 'rater';
+
+    const tag = document.createElement('span');
+    tag.className = 'rater-tag';
+    tag.textContent = state.raters[r];
+
+    const dots = document.createElement('div');
+    dots.className = 'dots';
+    dots.setAttribute('role', 'group');
+    dots.setAttribute('aria-label', c.name + ' — ' + state.raters[r]);
+
+    for (const n of SKALA) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = String(n);
+      b.setAttribute('aria-label', n + ' dari ' + MAX);
+      b.setAttribute('aria-pressed', String(nilaiSaatIni(h, c.id, r) === n));
+      b.addEventListener('click', () => setSkor(c.id, r, n));
+      dots.appendChild(b);
     }
 
-    wrap.appendChild(box);
+    baris.append(tag, dots);
+    box.appendChild(baris);
   }
+}
+
+function isiYaTidak(box, h, c) {
+  const baris = document.createElement('div');
+  baris.className = 'yatidak';
+  const sekarang = h.data[c.id];
+
+  for (const [nilai, label] of [[true, 'Ya'], [false, 'Tidak']]) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = label;
+    b.dataset.nilai = String(nilai);
+    b.setAttribute('aria-pressed', String(sekarang === nilai));
+    b.addEventListener('click', () => {
+      // Ketuk pilihan yang sama = kosongkan lagi. "Belum dicek" dan
+      // "tidak ada" itu dua hal berbeda, dan keduanya harus bisa
+      // dinyatakan.
+      h.data[c.id] = h.data[c.id] === nilai ? null : nilai;
+      simpan();
+      renderCriteria();
+      renderScoreboard();
+    });
+    baris.appendChild(b);
+  }
+  box.appendChild(baris);
+}
+
+function isiRupiah(box, h, c) {
+  const bungkus = document.createElement('div');
+  bungkus.className = 'money';
+
+  const pre = document.createElement('span');
+  pre.className = 'money-pre';
+  pre.textContent = 'Rp';
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.inputMode = 'numeric';
+  input.placeholder = '0';
+  input.autocomplete = 'off';
+  input.setAttribute('aria-label', c.name);
+  input.value = h.data[c.id] ? rupiah(h.data[c.id]) : '';
+  input.addEventListener('input', () => {
+    const angka = input.value.replace(/\D/g, '');
+    h.data[c.id] = angka ? parseInt(angka, 10) : 0;
+    input.value = h.data[c.id] ? rupiah(h.data[c.id]) : '';
+    simpan();
+    renderHitungBlok();
+  });
+
+  bungkus.append(pre, input);
+  box.appendChild(bungkus);
+}
+
+function isiTeks(box, h, c) {
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.autocomplete = 'off';
+  input.setAttribute('aria-label', c.name);
+  input.value = h.data[c.id] || '';
+  input.addEventListener('input', () => {
+    h.data[c.id] = input.value;
+    simpan();
+    renderHitungBlok();
+  });
+  box.appendChild(input);
+}
+
+// Saran = pilihan bawaan kriteria + apa pun yang pernah diketik di
+// rumah LAIN untuk kriteria yang sama. Itu yang menghapus keharusan
+// mengetik ulang daftar barang yang sama di tiap rumah.
+function saranDaftar(c, terpakai) {
+  const sudah = new Set(terpakai.map((v) => v.trim().toLowerCase()));
+  const keluar = [];
+  const tambah = (v) => {
+    const k = String(v).trim();
+    if (!k || sudah.has(k.toLowerCase())) return;
+    sudah.add(k.toLowerCase());
+    keluar.push(k);
+  };
+  for (const o of c.opsi || []) tambah(o);
+  for (const h of state.houses) {
+    const v = h.data[c.id];
+    if (Array.isArray(v)) for (const x of v) tambah(x);
+  }
+  return keluar;
+}
+
+function isiDaftar(box, h, c) {
+  if (!Array.isArray(h.data[c.id])) h.data[c.id] = [];
+
+  const chips = document.createElement('div');
+  chips.className = 'chips';
+
+  const form = document.createElement('form');
+  form.className = 'chip-form';
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.autocomplete = 'off';
+  input.placeholder = 'ketik lalu Enter';
+  input.setAttribute('aria-label', 'Tambah ke ' + c.name);
+  const tombol = document.createElement('button');
+  tombol.type = 'submit';
+  tombol.className = 'btn btn-primary btn-sm';
+  tombol.textContent = '+';
+  form.append(input, tombol);
+
+  const saran = document.createElement('div');
+  saran.className = 'chips chips-saran';
+
+  const tambah = (teks) => {
+    const v = String(teks).trim();
+    if (!v) return;
+    const ada = h.data[c.id].some((x) => x.trim().toLowerCase() === v.toLowerCase());
+    if (!ada) h.data[c.id].push(v);
+    simpan();
+    gambar();
+    renderHitungBlok();
+  };
+
+  const buang = (i) => {
+    h.data[c.id].splice(i, 1);
+    simpan();
+    gambar();
+    renderHitungBlok();
+  };
+
+  // Menggambar ulang HANYA isi kotak ini, bukan seluruh layar —
+  // supaya kursor tidak lompat keluar dari kolom ketiknya.
+  function gambar() {
+    chips.textContent = '';
+    h.data[c.id].forEach((v, i) => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'chip';
+      chip.setAttribute('aria-label', 'Hapus ' + v + ' dari ' + c.name);
+      const teks = document.createElement('span');
+      teks.textContent = v;
+      const x = document.createElement('span');
+      x.className = 'chip-x';
+      x.textContent = '×';
+      chip.append(teks, x);
+      chip.addEventListener('click', () => buang(i));
+      chips.appendChild(chip);
+    });
+
+    saran.textContent = '';
+    const daftarSaran = saranDaftar(c, h.data[c.id]).slice(0, 24);
+    for (const s of daftarSaran) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'chip chip-saran';
+      b.textContent = '+ ' + s;
+      b.setAttribute('aria-label', 'Tambah ' + s + ' ke ' + c.name);
+      b.addEventListener('click', () => tambah(s));
+      saran.appendChild(b);
+    }
+    saran.hidden = !daftarSaran.length;
+    chips.hidden = !h.data[c.id].length;
+  }
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    tambah(input.value);
+    input.value = '';
+    input.focus();
+  });
+
+  gambar();
+  box.append(chips, form, saran);
 }
 
 function nilaiSaatIni(h, critId, r) {
@@ -451,7 +797,27 @@ function renderCriteriaEditor() {
     x.setAttribute('aria-label', 'Hapus kriteria ' + c.name);
     duaLangkah(x, () => hapusKriteria(c.id));
 
-    li.append(grip, no, input, x);
+    const sel = document.createElement('select');
+    sel.className = 'tipe';
+    sel.setAttribute('aria-label', 'Tipe untuk ' + c.name);
+    for (const [nilai, label] of Object.entries(TIPE)) {
+      const o = document.createElement('option');
+      o.value = nilai;
+      o.textContent = label;
+      o.selected = c.type === nilai;
+      sel.appendChild(o);
+    }
+    sel.addEventListener('change', () => gantiTipe(c, sel.value));
+
+    const atas = document.createElement('div');
+    atas.className = 'crit-atas';
+    atas.append(grip, no, input, x);
+
+    const bawah = document.createElement('div');
+    bawah.className = 'crit-bawah';
+    bawah.append(sel);
+
+    li.append(atas, bawah);
     ol.appendChild(li);
 
     if (fokusPegangan === c.id) grip.focus();
@@ -625,7 +991,26 @@ function selesaiSeret(e) {
 
 function hapusKriteria(id) {
   state.criteria = state.criteria.filter((c) => c.id !== id);
-  for (const h of state.houses) delete h.scores[id];
+  for (const h of state.houses) {
+    delete h.scores[id];
+    delete h.data[id];
+  }
+  simpan();
+  renderCriteriaEditor();
+}
+
+// Ganti tipe = data lama untuk kriteria itu tidak lagi berbentuk
+// benar (angka rupiah menjadi tipe Ya/Tidak, dsb). Dibuang secara
+// sadar dan hanya untuk kriteria itu — menyimpannya diam-diam akan
+// muncul lagi sebagai nilai aneh kalau tipenya dikembalikan.
+function gantiTipe(c, tipeBaru) {
+  if (!TIPE[tipeBaru] || c.type === tipeBaru) return;
+  c.type = tipeBaru;
+  if (tipeBaru === 'daftar' && !Array.isArray(c.opsi)) c.opsi = [];
+  for (const h of state.houses) {
+    delete h.scores[c.id];
+    delete h.data[c.id];
+  }
   simpan();
   renderCriteriaEditor();
 }
@@ -762,7 +1147,7 @@ function pasang() {
     const input = document.getElementById('in-new-crit');
     const teks = input.value.trim();
     if (!teks) return;
-    state.criteria.push({ id: uid(), name: teks });
+    state.criteria.push(bikinKriteria({ name: teks, type: TIPE_BAWAAN }));
     input.value = '';
     simpan();
     renderCriteriaEditor();
@@ -779,6 +1164,7 @@ function rumahBaru() {
     period: 'bulan',
     notes: '',
     scores: {},
+    data: {},
     createdAt: Date.now(),
   };
   state.houses.push(h);

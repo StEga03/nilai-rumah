@@ -85,12 +85,22 @@
     <p class="price-note" id="price-note" hidden></p>
 
     <div class="scoreboard">
-      <div class="scoreboard-num" id="house-score">&ndash;</div>
-      <div class="scoreboard-label">skor gabungan<br><span id="house-progress">0 dari 0 kriteria dinilai</span></div>
+      <div class="scoreboard-cell">
+        <div class="scoreboard-num" id="house-score">&ndash;</div>
+        <div class="scoreboard-label">skor gabungan<br><span id="house-progress">0 dari 0 dinilai</span></div>
+      </div>
+      <div class="scoreboard-cell" id="cell-fasilitas" hidden>
+        <div class="scoreboard-num scoreboard-num-alt" id="house-fasilitas">&ndash;</div>
+        <div class="scoreboard-label">fasilitas<br><span>tidak dihitung ke skor</span></div>
+      </div>
     </div>
   </div>
 
+  <h2 class="blok" id="blok-nilai">Penilaian <span class="blok-n" id="n-nilai"></span></h2>
   <div class="criteria-list" id="criteria-list"></div>
+
+  <h2 class="blok" id="blok-catat">Pencatatan <span class="blok-n" id="n-catat"></span></h2>
+  <div class="criteria-list" id="catatan-list"></div>
 
   <div class="pad">
     <label class="field">

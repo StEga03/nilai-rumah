@@ -404,6 +404,10 @@ function setSkor(critId, r, n) {
 
 /* ── Layar: kriteria ──────────────────────────── */
 
+// Diisi sesaat sebelum render ulang supaya fokus keyboard tidak
+// hilang setiap kali baris dipindahkan pakai panah.
+let fokusPegangan = null;
+
 function renderCriteriaEditor() {
   document.getElementById('in-rater-0').value = state.raters[0];
   document.getElementById('in-rater-1').value = state.raters[1];
@@ -411,8 +415,26 @@ function renderCriteriaEditor() {
   const ol = document.getElementById('crit-editor');
   ol.textContent = '';
 
-  for (const c of state.criteria) {
+  state.criteria.forEach((c, i) => {
     const li = document.createElement('li');
+    li.dataset.id = c.id;
+
+    const grip = document.createElement('button');
+    grip.type = 'button';
+    grip.className = 'grip';
+    grip.textContent = '⠿';
+    grip.setAttribute('aria-label', 'Pindahkan ' + c.name + '. Pakai panah atas/bawah, atau tarik.');
+    grip.addEventListener('pointerdown', (e) => mulaiSeret(e, li, i));
+    grip.addEventListener('keydown', (e) => {
+      const arah = e.key === 'ArrowUp' ? -1 : e.key === 'ArrowDown' ? 1 : 0;
+      if (!arah) return;
+      e.preventDefault();
+      pindahKriteria(i, i + arah);
+    });
+
+    const no = document.createElement('span');
+    no.className = 'no';
+    no.textContent = String(i + 1).padStart(2, '0');
 
     const input = document.createElement('input');
     input.type = 'text';
@@ -429,8 +451,175 @@ function renderCriteriaEditor() {
     x.setAttribute('aria-label', 'Hapus kriteria ' + c.name);
     duaLangkah(x, () => hapusKriteria(c.id));
 
-    li.append(input, x);
+    li.append(grip, no, input, x);
     ol.appendChild(li);
+
+    if (fokusPegangan === c.id) grip.focus();
+  });
+
+  fokusPegangan = null;
+}
+
+// Satu-satunya tempat urutan kriteria berubah — seret maupun panah
+// keyboard sama-sama lewat sini.
+function pindahKriteria(dari, ke) {
+  if (ke < 0 || ke >= state.criteria.length || dari === ke) return;
+  const [item] = state.criteria.splice(dari, 1);
+  state.criteria.splice(ke, 0, item);
+  simpan();
+  fokusPegangan = item.id;
+  renderCriteriaEditor();
+}
+
+/* ── Seret untuk mengurutkan ───────────────────
+   Pointer Events, bukan touch/mouse terpisah: satu jalur kode yang
+   sama melayani jari di HP dan mouse di laptop, jadi tidak ada
+   cabang yang jarang teruji.
+   Semua perhitungan pakai koordinat HALAMAN (clientY + scrollY),
+   bukan koordinat layar — supaya gulir otomatis tidak mengacaukan
+   posisi baris yang sedang ditarik. */
+
+const TEPI_GULIR = 90; // jarak dari pinggir layar yang memicu gulir
+
+let seret = null;
+
+function mulaiSeret(e, li, index) {
+  if (seret || !e.isPrimary) return;
+  e.preventDefault();
+
+  const ol = document.getElementById('crit-editor');
+  const baris = [...ol.children];
+  const rects = baris.map((el) => {
+    const r = el.getBoundingClientRect();
+    return { atas: r.top + window.scrollY, tinggi: r.height };
+  });
+
+  seret = {
+    baris,
+    rects,
+    dariIndex: index,
+    keIndex: index,
+    tinggi: rects[index].tinggi,
+    mulaiHalamanY: e.clientY + window.scrollY,
+    terakhirClientY: e.clientY,
+    raf: 0,
+  };
+
+  // Pointer dikunci ke pegangan: jari boleh keluar dari elemennya
+  // tanpa seretan putus di tengah jalan.
+  // Gagal mengunci pointer bukan alasan seretan batal — pendengar
+  // pointermove sudah dipasang di window, jadi tanpa kunci pun
+  // seretannya tetap jalan.
+  try {
+    e.target.setPointerCapture(e.pointerId);
+  } catch (err) {
+    /* abaikan */
+  }
+  li.classList.add('seret');
+  document.body.classList.add('sedang-seret');
+}
+
+function gerakSeret(e) {
+  if (!seret || !e.isPrimary) return;
+  e.preventDefault();
+  seret.terakhirClientY = e.clientY;
+  perbaruiSeret();
+}
+
+function perbaruiSeret() {
+  terapkanPosisi();
+  aturGulir();
+}
+
+function terapkanPosisi() {
+  const s = seret;
+  if (!s) return;
+
+  const dy = s.terakhirClientY + window.scrollY - s.mulaiHalamanY;
+  const pusat = s.rects[s.dariIndex].atas + s.tinggi / 2 + dy;
+
+  // Bandingkan dengan titik tengah baris TETANGGA, satu per satu ke
+  // arah geseran — bukan dengan seluruh daftar sekaligus. Cara yang
+  // kedua ikut menghitung titik tengah baris yang sedang ditarik itu
+  // sendiri, sehingga geseran beberapa piksel pun sudah dianggap
+  // tukar posisi.
+  const tengah = (i) => s.rects[i].atas + s.rects[i].tinggi / 2;
+  let ke = s.dariIndex;
+  if (dy > 0) {
+    while (ke < s.rects.length - 1 && pusat > tengah(ke + 1)) ke++;
+  } else {
+    while (ke > 0 && pusat < tengah(ke - 1)) ke--;
+  }
+  s.keIndex = ke;
+
+  for (let j = 0; j < s.baris.length; j++) {
+    if (j === s.dariIndex) {
+      s.baris[j].style.transform = 'translateY(' + dy + 'px)';
+      continue;
+    }
+    let geser = 0;
+    if (s.dariIndex < ke && j > s.dariIndex && j <= ke) geser = -s.tinggi;
+    else if (s.dariIndex > ke && j >= ke && j < s.dariIndex) geser = s.tinggi;
+    s.baris[j].style.transform = geser ? 'translateY(' + geser + 'px)' : '';
+  }
+}
+
+// Tanpa gulir otomatis, 13 kriteria lebih tinggi dari layar HP dan
+// baris paling bawah tidak akan pernah bisa ditarik ke paling atas.
+function kecepatanGulir() {
+  const s = seret;
+  if (!s) return 0;
+  const y = s.terakhirClientY;
+  const bawah = window.innerHeight - TEPI_GULIR;
+  if (y < TEPI_GULIR) return -Math.ceil((TEPI_GULIR - y) / 5);
+  if (y > bawah) return Math.ceil((y - bawah) / 5);
+  return 0;
+}
+
+// Loop rAF HANYA hidup selama jari benar-benar di dekat tepi.
+// Membiarkannya berputar sepanjang seretan bikin timer kelaparan dan
+// HP bekerja terus-menerus untuk menghitung nol.
+function aturGulir() {
+  const s = seret;
+  if (!s) return;
+  const perlu = kecepatanGulir() !== 0;
+  if (perlu && !s.raf) s.raf = requestAnimationFrame(gulirOtomatis);
+  else if (!perlu && s.raf) {
+    cancelAnimationFrame(s.raf);
+    s.raf = 0;
+  }
+}
+
+function gulirOtomatis() {
+  const s = seret;
+  if (!s) return;
+  const d = kecepatanGulir();
+  if (!d) {
+    s.raf = 0;
+    return;
+  }
+  const sebelum = window.scrollY;
+  window.scrollBy(0, d);
+  if (window.scrollY !== sebelum) terapkanPosisi();
+  s.raf = requestAnimationFrame(gulirOtomatis);
+}
+
+function selesaiSeret(e) {
+  const s = seret;
+  if (!s || (e && !e.isPrimary)) return;
+  seret = null;
+  if (s.raf) cancelAnimationFrame(s.raf);
+
+  document.body.classList.remove('sedang-seret');
+  for (const el of s.baris) {
+    el.style.transform = '';
+    el.classList.remove('seret');
+  }
+
+  if (s.keIndex !== s.dariIndex) {
+    pindahKriteria(s.dariIndex, s.keIndex);
+  } else {
+    renderCriteriaEditor();
   }
 }
 
@@ -502,6 +691,13 @@ function pasang() {
   });
 
   duaLangkah(document.querySelector('[data-act="delete-house"]'), hapusRumah);
+
+  // Dipasang di window, bukan di pegangannya: pointercancel bisa
+  // datang dari mana saja (telepon masuk, gestur sistem), dan kalau
+  // terlewat, barisnya nyangkut menggantung selamanya.
+  window.addEventListener('pointermove', gerakSeret, { passive: false });
+  window.addEventListener('pointerup', selesaiSeret);
+  window.addEventListener('pointercancel', selesaiSeret);
 
   // Isian rumah — simpan tiap ketikan
   const nama = document.getElementById('in-name');

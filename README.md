@@ -11,7 +11,15 @@ Catatan penilaian rumah kontrakan untuk dipakai berdua sambil survey di lokasi.
    Angka bulat 1–5 tombolnya lebar; **½** di antaranya untuk nilai tengah
    (1½, 2½, 3½, 4½). Ketuk pilihan yang sama sekali lagi untuk membatalkan.
 3. Kembali ke daftar — rumah otomatis terurut dari skor tertinggi.
-4. **Kriteria** — tambah, ubah, atau hapus kriteria kapan pun, termasuk di lokasi.
+4. **Kriteria** — tambah, ubah, hapus, atau **urutkan ulang** kapan pun,
+   termasuk di lokasi. Tahan pegangan ⠿ lalu tarik; layar ikut menggulir
+   sendiri kalau ditarik sampai pinggir. Panah atas/bawah di keyboard juga
+   memindahkan baris kalau pegangannya sedang difokus.
+
+Urutan kriteria adalah urutan yang muncul di layar penilaian — susun sesuai
+rute jalan kaki keliling rumah supaya besok tinggal turun tanpa lompat-lompat.
+Mengurutkan ulang **tidak menggeser skor rumah mana pun**: skor menempel ke
+identitas kriteria, bukan ke posisinya.
 
 ## Yang perlu diketahui
 

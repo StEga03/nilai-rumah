@@ -3,7 +3,10 @@
    sinyalnya mati — tanpa ini, halaman GitHub Pages gagal dimuat
    persis di saat dibutuhkan. */
 
-const CACHE = 'nilai-rumah-v1';
+// Naikkan nomornya setiap kali index/app/style berubah, supaya
+// kunjungan berikutnya dapat versi baru — bukan menyajikan yang
+// lama dulu lalu baru menyegarkan di belakang.
+const CACHE = 'nilai-rumah-v2';
 
 const SHELL = [
   './',

@@ -53,6 +53,9 @@ body {
 
 .view { max-width: 620px; margin: 0 auto; padding-bottom: 120px; }
 .pad  { padding: 0 var(--pad); }
+/* Isian yang langsung menempel di bawah kepala blok butuh jarak;
+   tanpa ini label pertamanya menempel ke bilah hitamnya. */
+.pad-atas { padding-top: 16px; }
 
 /* ── Kepala halaman ───────────────────────────── */
 

@@ -7,16 +7,18 @@ Catatan penilaian rumah kontrakan untuk dipakai berdua sambil survey di lokasi.
 ## Cara pakai
 
 1. **+ Rumah baru** — isi nama/alamat, harga sewa, dan (opsional) link iklannya.
-2. Layar penilaian terbagi dua: **Penilaian** (yang dinilai) dan
-   **Pencatatan** (yang cuma dicatat).
+2. Layar penilaian punya tiga bagian: **Pencatatan** (nama, link, harga),
+   **Penilaian Kriteria** (semua kriteria, urutannya persis seperti yang
+   disusun di layar Kriteria), dan **Catatan** (teks bebas).
 3. Kembali ke daftar — rumah otomatis terurut dari skor tertinggi.
 4. **Kriteria** — tambah, ubah, hapus, ganti tipe, atau **urutkan ulang** kapan pun,
    termasuk di lokasi. Tahan pegangan ⠿ lalu tarik; layar ikut menggulir
    sendiri kalau ditarik sampai pinggir. Panah atas/bawah di keyboard juga
    memindahkan baris kalau pegangannya sedang difokus.
 
-Urutan kriteria adalah urutan yang muncul di layar penilaian — susun sesuai
-rute jalan kaki keliling rumah supaya besok tinggal turun tanpa lompat-lompat.
+Urutan kriteria adalah urutan yang muncul di layar penilaian, **apa pun
+tipenya** — susun sesuai rute jalan kaki keliling rumah supaya tinggal turun
+tanpa lompat-lompat.
 Mengurutkan ulang **tidak menggeser skor rumah mana pun**: skor menempel ke
 identitas kriteria, bukan ke posisinya.
 

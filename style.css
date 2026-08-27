@@ -1,0 +1,525 @@
+/* ═══════════════════════════════════════════════
+   Nilai Rumah — buku catatan surveyor
+   Kontras tinggi, latar kertas: dibaca di bawah
+   matahari sambil berdiri, bukan di dalam ruangan.
+   ═══════════════════════════════════════════════ */
+
+:root {
+  --paper:      #EFE7D9;
+  --paper-deep: #E4D9C6;
+  --card:       #F7F2E8;
+  --ink:        #17140F;
+  --ink-soft:   #5C5346;
+  --ink-faint:  #8B8071;
+  --accent:     #C13A16;
+  --accent-dim: #A63012;
+  --olive:      #5F6B3C;
+  --line:       #C9BCA5;
+
+  --serif: "Fraunces", "Iowan Old Style", Georgia, serif;
+  --sans:  "Archivo", "Helvetica Neue", Helvetica, sans-serif;
+  --mono:  "DM Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  --tap: 52px;
+  --pad: 20px;
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 17px;
+  line-height: 1.45;
+  padding-bottom: env(safe-area-inset-bottom);
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Tekstur kertas — halus, cuma bikin latarnya tidak mati */
+.grain {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 100;
+  opacity: .38;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
+}
+
+.view { max-width: 620px; margin: 0 auto; padding-bottom: 120px; }
+.pad  { padding: 0 var(--pad); }
+
+/* ── Kepala halaman ───────────────────────────── */
+
+.masthead { padding: 26px var(--pad) 4px; }
+
+.masthead-rule {
+  height: 3px;
+  background: var(--ink);
+  margin: 0 0 14px;
+}
+.masthead-rule:last-child { margin: 16px 0 0; height: 1px; background: var(--line); }
+
+.masthead h1 {
+  font-family: var(--serif);
+  font-weight: 800;
+  font-size: clamp(46px, 15vw, 76px);
+  line-height: .86;
+  letter-spacing: -.03em;
+  margin: 0;
+  font-variation-settings: "SOFT" 40, "WONK" 1;
+}
+.masthead h1 em {
+  font-style: italic;
+  color: var(--accent);
+  font-weight: 400;
+}
+
+.masthead-meta {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin: 12px 0 0;
+}
+
+.subhead {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--paper);
+  border-bottom: 2px solid var(--ink);
+}
+.subhead-title {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  flex: 1;
+  text-align: center;
+}
+.subhead-spacer { width: 62px; }
+
+.back, .del {
+  font-family: var(--mono);
+  font-size: 14px;
+  background: none;
+  border: none;
+  color: var(--ink);
+  padding: 10px 12px;
+  min-height: 44px;
+  cursor: pointer;
+}
+.back { font-size: 22px; line-height: 1; }
+.del  { color: var(--accent); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; width: 62px; }
+.del[data-armed="1"] { background: var(--accent); color: var(--card); border-radius: 3px; }
+
+/* ── Kartu rumah di daftar ────────────────────── */
+
+.stack { padding: 8px var(--pad) 0; }
+
+.house {
+  display: grid;
+  grid-template-columns: 46px 1fr auto;
+  gap: 0 12px;
+  align-items: start;
+  width: 100%;
+  text-align: left;
+  background: var(--card);
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+  padding: 14px 14px 12px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  box-shadow: 3px 3px 0 var(--paper-deep);
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+.house:active {
+  transform: translate(3px, 3px);
+  box-shadow: 0 0 0 var(--paper-deep);
+}
+
+.house-rank {
+  font-family: var(--mono);
+  font-size: 30px;
+  line-height: 1;
+  color: var(--line);
+  grid-row: span 2;
+  padding-top: 2px;
+}
+.house:first-child .house-rank { color: var(--accent); }
+
+.house-name {
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: 21px;
+  line-height: 1.15;
+  letter-spacing: -.015em;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.house-score {
+  font-family: var(--mono);
+  font-size: 27px;
+  line-height: 1;
+  font-weight: 500;
+  text-align: right;
+  grid-row: span 2;
+  align-self: center;
+}
+.house-score small {
+  display: block;
+  font-size: 10px;
+  letter-spacing: .1em;
+  color: var(--ink-faint);
+  margin-top: 3px;
+}
+.house-score[data-none="1"] { color: var(--ink-faint); }
+
+.house-meta {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  margin: 5px 0 0;
+  letter-spacing: .01em;
+}
+
+.bar {
+  grid-column: 2 / -1;
+  height: 5px;
+  background: var(--paper-deep);
+  border-radius: 99px;
+  margin-top: 9px;
+  overflow: hidden;
+}
+.bar span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  border-radius: 99px;
+}
+
+.empty {
+  text-align: center;
+  color: var(--ink-faint);
+  font-size: 15px;
+  line-height: 1.7;
+  padding: 40px var(--pad);
+  margin: 0;
+}
+
+/* ── Isian ────────────────────────────────────── */
+
+.field { display: block; margin-bottom: 16px; }
+.field-row { display: flex; gap: 12px; align-items: flex-end; }
+.field-grow { flex: 1; min-width: 0; }
+
+.field-label {
+  display: block;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin-bottom: 6px;
+}
+
+input[type="text"], textarea {
+  width: 100%;
+  font-family: var(--sans);
+  font-size: 17px;
+  color: var(--ink);
+  background: var(--card);
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+  padding: 12px;
+  min-height: var(--tap);
+  -webkit-appearance: none;
+}
+textarea { min-height: 0; line-height: 1.5; resize: vertical; }
+
+input:focus, textarea:focus {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+
+::placeholder { color: var(--ink-faint); opacity: 1; }
+
+.money { position: relative; }
+.money-pre {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--mono);
+  font-size: 15px;
+  color: var(--ink-soft);
+  pointer-events: none;
+}
+.money input {
+  padding-left: 42px;
+  font-family: var(--mono);
+  font-size: 18px;
+}
+
+.seg {
+  display: flex;
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.seg button {
+  font-family: var(--mono);
+  font-size: 13px;
+  background: var(--card);
+  color: var(--ink-soft);
+  border: none;
+  padding: 0 13px;
+  min-height: var(--tap);
+  cursor: pointer;
+}
+.seg button + button { border-left: 2px solid var(--ink); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+
+.price-note {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--olive);
+  margin: -8px 0 16px;
+}
+
+/* ── Papan skor ───────────────────────────────── */
+
+.scoreboard {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border-top: 2px solid var(--ink);
+  border-bottom: 2px solid var(--ink);
+  padding: 14px 0;
+  margin: 4px 0 8px;
+}
+.scoreboard-num {
+  font-family: var(--serif);
+  font-weight: 800;
+  font-size: 58px;
+  line-height: .85;
+  letter-spacing: -.04em;
+  color: var(--accent);
+  font-variation-settings: "SOFT" 40, "WONK" 1;
+}
+/* Skor kosong: jangan pakai angka raksasa merah — tanda hubung
+   sebesar itu terbaca sebagai garis nyasar, bukan sebagai "kosong". */
+.scoreboard-num[data-none="1"] {
+  font-size: 26px;
+  font-style: italic;
+  font-weight: 400;
+  color: var(--ink-faint);
+  letter-spacing: 0;
+}
+.scoreboard-label {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  line-height: 1.6;
+}
+.scoreboard-label span { color: var(--ink-faint); text-transform: none; letter-spacing: .02em; }
+
+/* ── Baris kriteria + tombol skor ─────────────── */
+
+.criteria-list { padding: 4px 0 8px; }
+
+.crit {
+  border-top: 1px solid var(--line);
+  padding: 14px var(--pad) 16px;
+}
+.crit:last-child { border-bottom: 1px solid var(--line); }
+
+.crit-name {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 19px;
+  letter-spacing: -.01em;
+  margin: 0 0 10px;
+  overflow-wrap: anywhere;
+}
+
+.rater {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+.rater-tag {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .06em;
+  color: var(--ink-soft);
+  width: 62px;
+  flex: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dots {
+  display: flex;
+  gap: 6px;
+  flex: 1;
+}
+.dots button {
+  flex: 1;
+  min-height: 46px;
+  font-family: var(--mono);
+  font-size: 15px;
+  background: var(--card);
+  color: var(--ink-faint);
+  border: 2px solid var(--line);
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 0;
+  transition: background .1s ease, color .1s ease, border-color .1s ease;
+}
+.dots button[aria-pressed="true"] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+.dots button:active { transform: scale(.94); }
+
+/* ── Editor kriteria ──────────────────────────── */
+
+.crit-editor {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  counter-reset: c;
+}
+.crit-editor li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-top: 1px solid var(--line);
+  padding: 8px var(--pad);
+}
+.crit-editor li:last-child { border-bottom: 1px solid var(--line); }
+.crit-editor li::before {
+  counter-increment: c;
+  content: counter(c, decimal-leading-zero);
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink-faint);
+  flex: none;
+}
+.crit-editor input {
+  flex: 1;
+  min-width: 0;
+  border-width: 1px;
+  padding: 10px;
+  min-height: 46px;
+}
+.crit-editor .x {
+  flex: none;
+  width: 46px;
+  min-height: 46px;
+  font-family: var(--mono);
+  font-size: 17px;
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  color: var(--accent);
+  cursor: pointer;
+}
+.crit-editor .x[data-armed="1"] { background: var(--accent); color: var(--card); border-color: var(--accent); }
+
+.add-row { display: flex; gap: 8px; margin-top: 16px; }
+.add-row input { flex: 1; min-width: 0; }
+
+/* ── Tombol ───────────────────────────────────── */
+
+.toolbar {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: 30;
+  display: flex;
+  gap: 8px;
+  padding: 12px var(--pad) calc(12px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--paper) 62%, rgba(239,231,217,0));
+  max-width: 620px;
+  margin: 0 auto;
+}
+
+.btn {
+  flex: 1;
+  min-height: var(--tap);
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 0 14px;
+  box-shadow: 3px 3px 0 var(--ink);
+  transition: transform .1s ease, box-shadow .1s ease;
+}
+.btn:active { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--ink); }
+
+.btn-primary { background: var(--accent); color: #FFF6EC; border-color: var(--ink); flex: 2; }
+.btn-ghost   { background: var(--card); color: var(--ink); }
+.btn-sm      { min-height: 46px; flex: 0 0 auto; }
+
+.btn-row { display: flex; gap: 8px; margin-top: 12px; }
+
+/* ── Lain-lain ────────────────────────────────── */
+
+.lede {
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--ink-soft);
+  margin: 12px 0 18px;
+}
+.saved-hint, .colophon {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .06em;
+  color: var(--ink-faint);
+  text-align: center;
+  margin: 14px 0 0;
+}
+.colophon { padding: 0 var(--pad); }
+
+.backup-msg {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--olive);
+  margin: 10px 0 0;
+}
+.backup-msg[data-err="1"] { color: var(--accent); }
+
+#backup-box {
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.rule { border: none; border-top: 1px solid var(--line); margin: 24px 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}

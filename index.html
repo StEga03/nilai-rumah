@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nilai Rumah</title>
+<meta name="theme-color" content="#EFE7D9">
+<meta name="description" content="Catatan penilaian rumah kontrakan.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..900&family=Archivo:wght@400..700&family=DM+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23EFE7D9'/><path d='M20 55 L50 28 L80 55 L80 82 L20 82 Z' fill='none' stroke='%23C13A16' stroke-width='9'/></svg>">
+</head>
+<body>
+
+<div class="grain" aria-hidden="true"></div>
+
+<!-- ══════════ DAFTAR RUMAH ══════════ -->
+<section class="view" id="view-list">
+  <header class="masthead">
+    <div class="masthead-rule"></div>
+    <h1>Nilai<br><em>Rumah</em></h1>
+    <p class="masthead-meta"><span id="meta-count">0 rumah</span> &middot; <span id="meta-date"></span></p>
+    <div class="masthead-rule"></div>
+  </header>
+
+  <div class="stack" id="house-list"></div>
+
+  <p class="empty" id="empty-note">
+    Belum ada rumah yang dinilai.<br>
+    Ketuk tombol di bawah untuk mulai.
+  </p>
+
+  <nav class="toolbar">
+    <button class="btn btn-primary" data-act="new-house">+ Rumah baru</button>
+    <button class="btn btn-ghost" data-act="go-criteria">Kriteria</button>
+    <button class="btn btn-ghost" data-act="go-backup">Backup</button>
+  </nav>
+
+  <footer class="colophon">
+    Tersimpan di HP ini saja &middot; tidak terkirim ke mana pun
+  </footer>
+</section>
+
+<!-- ══════════ NILAI SATU RUMAH ══════════ -->
+<section class="view" id="view-house" hidden>
+  <header class="subhead">
+    <button class="back" data-act="go-list" aria-label="Kembali ke daftar">&larr;</button>
+    <span class="subhead-title">Penilaian</span>
+    <button class="del" data-act="delete-house">Hapus</button>
+  </header>
+
+  <div class="pad">
+    <label class="field">
+      <span class="field-label">Nama / alamat</span>
+      <input type="text" id="in-name" placeholder="Rumah gang Mawar no. 12" autocomplete="off">
+    </label>
+
+    <div class="field-row">
+      <label class="field field-grow">
+        <span class="field-label">Harga sewa</span>
+        <div class="money">
+          <span class="money-pre">Rp</span>
+          <input type="text" inputmode="numeric" id="in-price" placeholder="0" autocomplete="off">
+        </div>
+      </label>
+      <div class="field">
+        <span class="field-label">Per</span>
+        <div class="seg" id="seg-period" role="group" aria-label="Satuan harga sewa">
+          <button type="button" data-period="bulan">bln</button>
+          <button type="button" data-period="tahun">thn</button>
+        </div>
+      </div>
+    </div>
+    <p class="price-note" id="price-note" hidden></p>
+
+    <div class="scoreboard">
+      <div class="scoreboard-num" id="house-score">&ndash;</div>
+      <div class="scoreboard-label">skor gabungan<br><span id="house-progress">0 dari 0 kriteria dinilai</span></div>
+    </div>
+  </div>
+
+  <div class="criteria-list" id="criteria-list"></div>
+
+  <div class="pad">
+    <label class="field">
+      <span class="field-label">Catatan bebas</span>
+      <textarea id="in-notes" rows="4" placeholder="Pemiliknya boleh nego. AC kamar depan rusak, katanya mau diperbaiki sebelum masuk."></textarea>
+    </label>
+    <p class="saved-hint">Tersimpan otomatis setiap kali diubah.</p>
+  </div>
+
+  <nav class="toolbar">
+    <button class="btn btn-primary" data-act="go-list">Selesai</button>
+  </nav>
+</section>
+
+<!-- ══════════ ATUR KRITERIA ══════════ -->
+<section class="view" id="view-criteria" hidden>
+  <header class="subhead">
+    <button class="back" data-act="go-list" aria-label="Kembali ke daftar">&larr;</button>
+    <span class="subhead-title">Kriteria</span>
+    <span class="subhead-spacer"></span>
+  </header>
+
+  <div class="pad">
+    <p class="lede">Berlaku untuk semua rumah. Menghapus kriteria juga menghapus skornya di semua rumah.</p>
+
+    <div class="field-row">
+      <label class="field field-grow">
+        <span class="field-label">Penilai 1</span>
+        <input type="text" id="in-rater-0" autocomplete="off" maxlength="12">
+      </label>
+      <label class="field field-grow">
+        <span class="field-label">Penilai 2</span>
+        <input type="text" id="in-rater-1" autocomplete="off" maxlength="12">
+      </label>
+    </div>
+  </div>
+
+  <ol class="crit-editor" id="crit-editor"></ol>
+
+  <div class="pad">
+    <form class="add-row" id="form-add-crit">
+      <input type="text" id="in-new-crit" placeholder="Kriteria baru" autocomplete="off">
+      <button class="btn btn-primary btn-sm" type="submit">Tambah</button>
+    </form>
+  </div>
+
+  <nav class="toolbar">
+    <button class="btn btn-primary" data-act="go-list">Selesai</button>
+  </nav>
+</section>
+
+<!-- ══════════ BACKUP ══════════ -->
+<section class="view" id="view-backup" hidden>
+  <header class="subhead">
+    <button class="back" data-act="go-list" aria-label="Kembali ke daftar">&larr;</button>
+    <span class="subhead-title">Backup</span>
+    <span class="subhead-spacer"></span>
+  </header>
+
+  <div class="pad">
+    <p class="lede">
+      Data ini cuma ada di browser HP ini. Kalau data browser dibersihkan, semuanya hilang.
+      Salin teks di bawah dan tempel ke WhatsApp diri sendiri &mdash; itu cadangannya.
+    </p>
+    <textarea id="backup-box" rows="9" spellcheck="false" aria-label="Data cadangan"></textarea>
+    <div class="btn-row">
+      <button class="btn btn-primary btn-sm" data-act="copy-backup">Salin</button>
+      <button class="btn btn-ghost btn-sm" data-act="import-backup">Tempel &amp; pulihkan</button>
+    </div>
+    <p class="backup-msg" id="backup-msg" hidden></p>
+
+    <hr class="rule">
+    <p class="lede">
+      Memulihkan akan <strong>menimpa</strong> seluruh data yang ada sekarang.
+      Ganti isi kotak di atas dengan teks cadangan lu, lalu ketuk &ldquo;Tempel &amp; pulihkan&rdquo;.
+    </p>
+  </div>
+
+  <nav class="toolbar">
+    <button class="btn btn-ghost" data-act="go-list">Kembali</button>
+  </nav>
+</section>
+
+<script src="app.js"></script>
+</body>
+</html>

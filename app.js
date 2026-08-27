@@ -232,10 +232,6 @@ function kriteriaSkor() {
   return state.criteria.filter((c) => c.type === 'skor');
 }
 
-function kriteriaCatatan() {
-  return state.criteria.filter((c) => c.type !== 'skor');
-}
-
 function skorRumah(h) {
   const nilai = [];
   for (const c of kriteriaSkor()) {
@@ -470,24 +466,21 @@ function renderScoreboard() {
   if (f) document.getElementById('house-fasilitas').textContent = f.ya + '/' + f.dari;
 }
 
+// SATU daftar, urutannya persis seperti yang disusun di layar
+// Kriteria. Sebelumnya dipisah dua blok menurut tipe — dan itu
+// diam-diam membatalkan seret-urut: kriteria Ya/Tidak yang ditarik
+// ke urutan 1 tetap muncul di bawah semua kriteria Skor.
 function renderCriteria() {
   const h = rumahAktif();
-  const nilai = document.getElementById('criteria-list');
-  const catat = document.getElementById('catatan-list');
-  nilai.textContent = '';
-  catat.textContent = '';
+  const wrap = document.getElementById('criteria-list');
+  wrap.textContent = '';
   if (!h) return;
 
-  const daftarNilai = kriteriaSkor();
-  const daftarCatat = kriteriaCatatan();
+  // Judul blok disembunyikan kalau kosong — kepala tanpa isi terbaca
+  // seperti sesuatu yang gagal dimuat.
+  document.getElementById('blok-nilai').hidden = !state.criteria.length;
 
-  // Judul blok disembunyikan kalau bloknya kosong — kepala tanpa isi
-  // terbaca seperti sesuatu yang gagal dimuat.
-  document.getElementById('blok-nilai').hidden = !daftarNilai.length;
-  document.getElementById('blok-catat').hidden = !daftarCatat.length;
-
-  for (const c of daftarNilai) nilai.appendChild(kotakKriteria(h, c));
-  for (const c of daftarCatat) catat.appendChild(kotakKriteria(h, c));
+  for (const c of state.criteria) wrap.appendChild(kotakKriteria(h, c));
 
   renderHitungBlok();
 }
@@ -498,14 +491,17 @@ function renderCriteria() {
 function renderHitungBlok() {
   const h = rumahAktif();
   if (!h) return;
-  const catat = kriteriaCatatan();
-  document.getElementById('n-nilai').textContent =
-    jumlahKriteriaDinilai(h) + '/' + kriteriaSkor().length;
-  document.getElementById('n-catat').textContent =
-    catat.filter((c) => sudahDicatat(h, c)).length + '/' + catat.length;
+  const terisi = state.criteria.filter((c) => sudahDiisi(h, c)).length;
+  document.getElementById('n-nilai').textContent = terisi + '/' + state.criteria.length;
 }
 
-function sudahDicatat(h, c) {
+// "Terisi" per tipe. Rp 0 dan teks berisi spasi TIDAK dihitung —
+// keduanya tidak bisa dibedakan dari kolom yang belum disentuh.
+function sudahDiisi(h, c) {
+  if (c.type === 'skor') {
+    const p = h.scores[c.id];
+    return Array.isArray(p) && p.some((n) => typeof n === 'number');
+  }
   const v = h.data[c.id];
   if (c.type === 'yatidak') return typeof v === 'boolean';
   if (c.type === 'rupiah') return typeof v === 'number' && v > 0;

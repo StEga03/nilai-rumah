@@ -6,9 +6,10 @@ Catatan penilaian rumah kontrakan untuk dipakai berdua sambil survey di lokasi.
 
 ## Cara pakai
 
-1. **+ Rumah baru** — isi nama/alamat dan harga sewa.
-2. Tiap kriteria punya dua baris skor 1–5: satu untuk masing-masing penilai.
-   Ketuk angka yang sama sekali lagi untuk membatalkan.
+1. **+ Rumah baru** — isi nama/alamat, harga sewa, dan (opsional) link iklannya.
+2. Tiap kriteria punya dua baris skor: satu untuk masing-masing penilai.
+   Angka bulat 1–5 tombolnya lebar; **½** di antaranya untuk nilai tengah
+   (1½, 2½, 3½, 4½). Ketuk pilihan yang sama sekali lagi untuk membatalkan.
 3. Kembali ke daftar — rumah otomatis terurut dari skor tertinggi.
 4. **Kriteria** — tambah, ubah, atau hapus kriteria kapan pun, termasuk di lokasi.
 
@@ -25,6 +26,10 @@ salin teksnya dan tempel ke WhatsApp diri sendiri di akhir hari.
 **Skornya rata-rata semua kriteria, bobotnya sama rata.** Kriteria yang belum
 dinilai tidak dihitung nol, jadi rumah yang baru dinilai separuh tidak
 otomatis kalah dari yang sudah lengkap.
+
+**Link cuma dibuka kalau `http://` atau `https://`.** Kalau host-nya tidak
+berbentuk domain, tombol "Buka" tidak muncul — tombol yang berbohong lebih
+buruk daripada tombol yang tidak ada. Tanpa protokol otomatis jadi `https://`.
 
 **Harga sengaja tidak ikut dihitung ke skor.** Ditampilkan di sebelah skor
 supaya "skor tinggi tapi mahal" kelihatan, tapi keputusan worth-it-nya milik

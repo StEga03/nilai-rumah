@@ -9,6 +9,10 @@
 const KEY = 'nilai-rumah/v1';
 const MAX = 5; // skor tertinggi per kriteria
 
+// Angka bulat + setengahnya. Setengah dipakai untuk memecah seri,
+// bukan sebagai pilihan sehari-hari — makanya tombolnya lebih sempit.
+const SKALA = [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5];
+
 const KRITERIA_AWAL = [
   'Harga & ruang nego',
   'Luas & jumlah kamar',
@@ -71,6 +75,7 @@ function rapikan(d) {
     ? d.houses.filter(Boolean).map((h) => ({
         id: String(h.id || uid()),
         name: String(h.name || ''),
+        link: String(h.link || ''),
         price: Number(h.price) || 0,
         period: h.period === 'tahun' ? 'tahun' : 'bulan',
         notes: String(h.notes || ''),
@@ -136,6 +141,31 @@ function jumlahKriteriaDinilai(h) {
 
 function rupiah(n) {
   return n.toLocaleString('id-ID');
+}
+
+// Koma, bukan titik — 3,8 bukan 3.8.
+function fmtSkor(n) {
+  return n.toFixed(1).replace('.', ',');
+}
+
+// Teks bebas yang dijadikan href adalah jalur masuk `javascript:`.
+// Cuma http/https yang boleh lewat; sisanya dianggap bukan link.
+function linkAman(teks) {
+  const t = String(teks || '').trim();
+  if (!t || /\s/.test(t)) return null;
+  let u;
+  try {
+    u = new URL(/^[a-z][a-z0-9+.-]*:/i.test(t) ? t : 'https://' + t);
+  } catch (e) {
+    return null;
+  }
+  if (u.protocol !== 'http:' && u.protocol !== 'https:') return null;
+  // Host harus benar-benar berbentuk domain. Tanpa ini, catatan biasa
+  // seperti "tanya pemiliknya" ikut jadi URL dan memunculkan tombol
+  // "Buka" yang dijamin gagal — tombol yang berbohong lebih buruk
+  // daripada tombol yang tidak muncul.
+  if (!/^[a-z0-9.-]+$/i.test(u.hostname) || !u.hostname.includes('.')) return null;
+  return u.href;
 }
 
 function ringkas(n) {
@@ -207,7 +237,7 @@ function kartuRumah(h, rank) {
     skorEl.dataset.none = '1';
     skorEl.textContent = '–';
   } else {
-    skorEl.textContent = skor.toFixed(1);
+    skorEl.textContent = fmtSkor(skor);
   }
   const kecil = document.createElement('small');
   kecil.textContent = skor === null ? 'BELUM' : 'DARI ' + MAX;
@@ -218,6 +248,7 @@ function kartuRumah(h, rank) {
   const bagian = [];
   if (h.price > 0) bagian.push('Rp ' + ringkas(h.price) + '/' + (h.period === 'tahun' ? 'thn' : 'bln'));
   bagian.push(jumlahKriteriaDinilai(h) + '/' + state.criteria.length + ' kriteria');
+  if (linkAman(h.link)) bagian.push('↗');
   meta.textContent = bagian.join('  ·  ');
 
   const bar = document.createElement('div');
@@ -242,13 +273,37 @@ function bukaRumah(id) {
   if (!h) return tampilkan('list');
 
   document.getElementById('in-name').value = h.name;
+  document.getElementById('in-link').value = h.link;
   document.getElementById('in-price').value = h.price ? rupiah(h.price) : '';
   document.getElementById('in-notes').value = h.notes;
   lucutSenjata();
+  renderLink();
   renderPeriod();
   renderCriteria();
   renderScoreboard();
   tampilkan('house');
+}
+
+function renderLink() {
+  const h = rumahAktif();
+  if (!h) return;
+  const a = document.getElementById('btn-link');
+  const note = document.getElementById('link-note');
+  const url = linkAman(h.link);
+
+  if (url) {
+    a.href = url;
+    a.hidden = false;
+  } else {
+    // href dicabut, bukan cuma disembunyikan — supaya tidak ada
+    // sisa alamat lama yang masih bisa terbuka.
+    a.removeAttribute('href');
+    a.hidden = true;
+  }
+
+  const adaIsi = h.link.trim().length > 0;
+  note.hidden = !adaIsi || !!url;
+  if (!note.hidden) note.textContent = 'Belum kebaca sebagai link. Pastikan tersalin utuh.';
 }
 
 function renderPeriod() {
@@ -273,7 +328,7 @@ function renderScoreboard() {
   if (!h) return;
   const skor = skorRumah(h);
   const num = document.getElementById('house-score');
-  num.textContent = skor === null ? 'belum' : skor.toFixed(1);
+  num.textContent = skor === null ? 'belum' : fmtSkor(skor);
   if (skor === null) num.dataset.none = '1';
   else delete num.dataset.none;
   document.getElementById('house-progress').textContent =
@@ -308,10 +363,15 @@ function renderCriteria() {
       dots.setAttribute('role', 'group');
       dots.setAttribute('aria-label', c.name + ' — ' + state.raters[r]);
 
-      for (let n = 1; n <= MAX; n++) {
+      for (const n of SKALA) {
+        const setengah = n % 1 !== 0;
         const b = document.createElement('button');
         b.type = 'button';
-        b.textContent = String(n);
+        b.className = setengah ? 'half' : 'whole';
+        // Tombol setengah cuma memuat "½" — angka penuhnya tidak
+        // cukup ruang. Nilai sebenarnya tetap diumumkan lewat label.
+        b.textContent = setengah ? '½' : String(n);
+        b.setAttribute('aria-label', fmtSkor(n) + ' dari ' + MAX);
         b.setAttribute('aria-pressed', String(nilaiSaatIni(h, c.id, r) === n));
         b.addEventListener('click', () => setSkor(c.id, r, n));
         dots.appendChild(b);
@@ -452,6 +512,15 @@ function pasang() {
     simpan();
   });
 
+  const link = document.getElementById('in-link');
+  link.addEventListener('input', () => {
+    const h = rumahAktif();
+    if (!h) return;
+    h.link = link.value;
+    simpan();
+    renderLink();
+  });
+
   const harga = document.getElementById('in-price');
   harga.addEventListener('input', () => {
     const h = rumahAktif();
@@ -509,6 +578,7 @@ function rumahBaru() {
   const h = {
     id: uid(),
     name: '',
+    link: '',
     price: 0,
     period: 'bulan',
     notes: '',

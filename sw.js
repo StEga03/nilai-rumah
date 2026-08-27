@@ -3,21 +3,31 @@
    sinyalnya mati — tanpa ini, halaman GitHub Pages gagal dimuat
    persis di saat dibutuhkan. */
 
-// Naikkan nomornya setiap kali index/app/style berubah, supaya
-// kunjungan berikutnya dapat versi baru — bukan menyajikan yang
-// lama dulu lalu baru menyegarkan di belakang.
-const CACHE = 'nilai-rumah-v5';
+// Naikkan nomornya setiap kali index/app/style berubah.
+const CACHE = 'nilai-rumah-v6';
 
-const SHELL = [
-  './',
-  './index.html',
-  './style.css',
-  './app.js',
-];
+// `./index.html` SENGAJA tidak ada di sini walau filenya ada.
+// Menyimpan halaman yang sama di dua alamat (`./` dan `./index.html`)
+// membuat CDN GitHub memperlakukannya sebagai dua sumber terpisah
+// yang bisa berbeda versi — dan itu benar-benar terjadi: `./`
+// menyajikan versi lama sementara `./index.html` sudah baru.
+// Tidak ada yang meminta `index.html` langsung, jadi satu alamat saja.
+const SHELL = ['./', './style.css', './app.js'];
 
+// `cache: 'reload'` memaksa lewat jaringan, melewati cache HTTP
+// browser. Tanpa ini, pemasangan versi baru bisa mengisi cache-nya
+// dengan berkas LAMA yang masih dipegang browser — versinya naik,
+// tapi isinya tidak pernah sampai ke layar.
 self.addEventListener('install', (e) => {
   e.waitUntil(
-    caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting())
+    caches.open(CACHE)
+      .then(async (cache) => {
+        for (const u of SHELL) {
+          const res = await fetch(new Request(u, { cache: 'reload' }));
+          if (res && res.ok) await cache.put(u, res);
+        }
+      })
+      .then(() => self.skipWaiting())
   );
 });
 
@@ -35,7 +45,8 @@ self.addEventListener('fetch', (e) => {
 
   const url = new URL(req.url);
   const fonts = url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com';
-  if (url.origin !== self.location.origin && !fonts) return;
+  const sendiri = url.origin === self.location.origin;
+  if (!sendiri && !fonts) return;
 
   // Stale-while-revalidate: langsung sajikan dari cache (jadi tetap
   // jalan offline), sambil diam-diam ambil versi baru untuk kunjungan
@@ -43,12 +54,20 @@ self.addEventListener('fetch', (e) => {
   e.respondWith(
     caches.open(CACHE).then(async (cache) => {
       const cached = await cache.match(req);
-      const segar = fetch(req)
+
+      // Penyegaran berkas sendiri WAJIB melewati cache HTTP browser.
+      // Kalau tidak, header max-age dari GitHub Pages membuat browser
+      // menyajikan salinan lama berulang kali, dan halamannya tidak
+      // pernah diperbarui betapapun sering dimuat ulang.
+      const permintaan = sendiri ? new Request(req.url, { cache: 'no-cache' }) : req;
+
+      const segar = fetch(permintaan)
         .then((res) => {
           if (res && (res.ok || res.type === 'opaque')) cache.put(req, res.clone());
           return res;
         })
         .catch(() => null);
+
       return cached || (await segar) || new Response('Offline', { status: 503 });
     })
   );
